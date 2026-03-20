@@ -1,0 +1,74 @@
+{% extends 'stock/base.html' %}
+{% load static %}
+{% load custom_filters %}
+
+{% block title %}📄 Historique des mouvements - Impression{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-3">
+    <div class="row">
+        <div class="col-12">
+            <div class="text-center mb-4">
+                <h2>📋 Historique des mouvements de stock</h2>
+                <p>Généré le {% now "d/m/Y H:i" %}</p>
+            </div>
+
+            <table class="table table-bordered table-sm">
+                <thead class="table-light">
+                    <tr>
+                        <th>Date</th>
+                        <th>Produit</th>
+                        <th>Type</th>
+                        <th class="text-end">Quantité</th>
+                        <th class="text-end">Montant (MRU)</th>
+                        <th>Opérateur</th>
+                        <th>Commentaire</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for m in mouvements %}
+                    <tr>
+                        <td>{{ m.date_operation|date:"d/m/Y H:i" }}</td>
+                        <td>{{ m.produit.nom }}</td>
+                        <td>
+                            {% if m.type_mouvement == 'ENTREE' %}
+                                Entrée
+                            {% else %}
+                                Vente
+                            {% endif %}
+                        </td>
+                        <td class="text-end">
+                            {% if m.type_mouvement == 'ENTREE' %}
+                                +{{ m.quantite }}
+                            {% else %}
+                                -{{ m.quantite }}
+                            {% endif %}
+                        </td>
+                        <td class="text-end">{{ m.montant_total|floatformat:2 }}</td>
+                        <td>{{ m.opere_par.get_full_name|default:m.opere_par.username }}</td>
+                        <td>{{ m.commentaire|default:"—" }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="7" class="text-center">Aucun mouvement trouvé.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+
+            <div class="text-end mt-3">
+                <button onclick="window.print()" class="btn btn-primary">🖨️ Imprimer</button>
+                <a href="{% url 'stock:historique' %}" class="btn btn-secondary">Retour</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    @media print {
+        .btn, .navbar, .sidebar { display: none; }
+        body { background: white; }
+        .container-fluid { margin: 0; padding: 0; }
+    }
+</style>
+{% endblock %}

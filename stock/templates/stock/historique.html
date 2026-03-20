@@ -1,0 +1,98 @@
+{% extends 'stock/base.html' %}
+{% load static %}
+{% load custom_filters %}
+
+{% block title %}🕐 Historique des mouvements{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <!-- En-tête -->
+            <div class="card card-custom bg-gradient-info text-white mb-4">
+                <div class="card-body d-flex justify-content-between align-items-center py-3">
+                    <h2 class="mb-0">🕐 Historique des mouvements</h2>
+                    <a href="{% url 'stock:imprimer_historique' %}" class="btn btn-light btn-lg" target="_blank">
+                        🖨️ Imprimer
+                    </a>
+                </div>
+            </div>
+
+            <!-- Filtres (optionnel) -->
+            <div class="card card-custom p-3 mb-4">
+                <form method="GET" class="row g-3">
+                    <div class="col-md-3">
+                        <label for="type" class="form-label">Type</label>
+                        <select name="type" id="type" class="form-select">
+                            <option value="">Tous</option>
+                            <option value="ENTREE" {% if request.GET.type == 'ENTREE' %}selected{% endif %}>Entrées</option>
+                            <option value="VENTE" {% if request.GET.type == 'VENTE' %}selected{% endif %}>Ventes</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="date_debut" class="form-label">Date début</label>
+                        <input type="date" name="date_debut" id="date_debut" class="form-control" value="{{ request.GET.date_debut }}">
+                    </div>
+                    <div class="col-md-3">
+                        <label for="date_fin" class="form-label">Date fin</label>
+                        <input type="date" name="date_fin" id="date_fin" class="form-control" value="{{ request.GET.date_fin }}">
+                    </div>
+                    <div class="col-md-3 d-flex align-items-end">
+                        <button type="submit" class="btn btn-primary w-100">Filtrer</button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Tableau des mouvements -->
+            <div class="card card-custom p-3">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Date</th>
+                                <th>Produit</th>
+                                <th>Type</th>
+                                <th>Quantité</th>
+                                <th class="text-end">Montant (MRU)</th>
+                                <th>Opérateur</th>
+                                <th>Commentaire</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for m in mouvements %}
+                            <tr>
+                                <td>{{ m.date_operation|date:"d/m/Y H:i" }}</td>
+                                <td>{{ m.produit.nom }}</td>
+                                <td>
+                                    {% if m.type_mouvement == 'ENTREE' %}
+                                        <span class="badge bg-success">Entrée</span>
+                                    {% else %}
+                                        <span class="badge bg-warning text-dark">Vente</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if m.type_mouvement == 'ENTREE' %}
+                                        <span class="text-success fw-bold">+{{ m.quantite }}</span>
+                                    {% else %}
+                                        <span class="text-danger fw-bold">-{{ m.quantite }}</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-end">{{ m.montant_total|floatformat:2 }}</td>
+                                <td>{{ m.opere_par.get_full_name|default:m.opere_par.username }}</td>
+                                <td>{{ m.commentaire|default:"—" }}</td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="7" class="text-center py-4 text-muted">
+                                    Aucun mouvement trouvé.
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

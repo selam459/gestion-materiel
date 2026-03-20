@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Rapport Stock Critique</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        h1 { color: #d9534f; }
+        table { border-collapse: collapse; width: 100%; margin-top: 20px; }
+        th, td { border: 1px solid #ddd; padding: 10px; text-align: left; }
+        th { background-color: #f2f2f2; }
+        .critique { background-color: #ffdddd; }
+        .info { background-color: #e7f3fe; padding: 10px; border-left: 6px solid #2196F3; }
+    </style>
+</head>
+<body>
+    <h1>Rapport des stocks critiques</h1>
+
+    {% if produits %}
+        <table>
+            <thead>
+                <tr>
+                    <th>Nom</th>
+                    <th>Stock actuel</th>
+                    <th>Seuil critique</th>
+                    <th>Écart (manque)</th>
+                    <th>Valeur du stock (MRU)</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for produit in produits %}
+                <tr class="critique">
+                    <td>{{ produit.nom }}</td>
+                    <td>{{ produit.stock_actuel }}</td>
+                    <td>{{ produit.seuil_critique }}</td>
+                    <td>{{ produit.ecart }}</td>
+                    <td>{{ produit.valeur_stock|floatformat:2 }} MRU</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <div class="info">
+            <strong>✅ Aucun produit en dessous du seuil critique.</strong>
+        </div>
+    {% endif %}
+
+    <p style="margin-top: 20px;">
+        <a href="{% url 'stock:dashboard' %}">← Retour au tableau de bord</a>
+    </p>
+</body>
+</html>

@@ -1,0 +1,99 @@
+{% extends 'stock/base.html' %}
+{% load static %}
+{% load custom_filters %}
+{% block title %}📋 Liste des Produits{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            
+            <!-- En-tête -->
+            <div class="card card-custom bg-gradient-primary text-white mb-4">
+                <div class="card-body d-flex justify-content-between align-items-center py-3">
+                    <h2 class="mb-0">📦 Liste des Produits</h2>
+                    <a href="{% url 'stock:ajouter_produit' %}" class="btn btn-light btn-lg">
+                        ➕ Nouveau Produit
+                    </a>
+                </div>
+            </div>
+
+            <!-- Messages -->
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+
+            <!-- Tableau des produits -->
+            <div class="card card-custom p-3">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th>ID</th>
+                                <th>Nom</th>
+                                <th>Description</th>
+                                <th class="text-end">Prix unitaire (MRU)</th>
+                                <th class="text-end">Stock actuel</th>
+                                <th class="text-end">Valeur totale (MRU)</th>
+                                <th class="text-center">Seuil critique</th>
+                                <th class="text-center">Statut</th>
+                                <th class="text-center">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for produit in produits %}
+                            <tr>
+                                <td>{{ produit.id }}</td>
+                                <td class="fw-bold">{{ produit.nom }}</td>
+                                <td>{{ produit.description|truncatechars:30 }}</td>
+                                <td class="text-end">{{ produit.prix_unitaire|floatformat:2 }}</td>
+                                <td class="text-end">{{ produit.stock_actuel }}</td>
+                                <td class="text-end">{{ produit.stock_actuel|floatformat:0|add:0|multiply:produit.prix_unitaire|floatformat:2 }}</td>
+                                <td class="text-center">{{ produit.seuil_critique }}</td>
+                                <td class="text-center">
+                                    {% if produit.stock_actuel <= produit.seuil_critique %}
+                                        <span class="badge bg-danger">⚠️ Critique</span>
+                                    {% else %}
+                                        <span class="badge bg-success">✅ Normal</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-center">
+                                    <a href="{% url 'stock:modifier_produit' produit.id %}" class="btn btn-sm btn-warning" title="Modifier">
+                                        ✏️
+                                    </a>
+                                    <a href="{% url 'stock:supprimer_produit' produit.id %}" class="btn btn-sm btn-danger" title="Supprimer">
+                                        🗑️
+                                    </a>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="9" class="text-center py-4 text-muted">
+                                    Aucun produit enregistré.
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Aide -->
+            <div class="card card-custom p-3 mt-4 bg-light">
+                <h6 class="fw-bold mb-2">💡 Légende :</h6>
+                <ul class="mb-0 small text-muted">
+                    <li><span class="badge bg-success">✅ Normal</span> : stock supérieur au seuil critique.</li>
+                    <li><span class="badge bg-danger">⚠️ Critique</span> : stock inférieur ou égal au seuil critique.</li>
+                    <li>La <strong>valeur totale</strong> est calculée automatiquement (stock × prix unitaire).</li>
+                </ul>
+            </div>
+
+        </div>
+    </div>
+</div>
+{% endblock %}

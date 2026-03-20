@@ -1,0 +1,44 @@
+# Environnement virtuel
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Python
+*.pyc
+__pycache__/
+*.pyo
+*.pyd
+.Python
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+pip-log.txt
+pip-delete-this-directory.txt
+*.log
+.mypy_cache/
+.dmypy.json
+dmypy.json
+.pyre/
+.pytype/
+
+# Base de données SQLite (locale)
+*.sqlite3
+db.sqlite3
+
+# Fichiers statiques collectés
+staticfiles/
+
+# Fichiers médias
+media/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store

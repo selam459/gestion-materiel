@@ -1,0 +1,388 @@
+{% extends 'stock/base.html' %}
+{% load static %}
+{% load user_extras %}
+
+{% block title %}🏠 Tableau de Bord - Gestion Stock MRU{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Animations pour les cartes */
+    @keyframes fadeInUp {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    /* Supprimez tout ce qui est entre les deux définitions */
+    .card-custom { animation: fadeInUp 0.4s ease-out; }
+    /* ... le reste de votre CSS ... */
+    /* Animations pour les cartes */
+    @keyframes fadeInUp {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    .card-custom { animation: fadeInUp 0.4s ease-out; }
+    .card-custom:nth-child(1) { animation-delay: 0.1s; }
+    .card-custom:nth-child(2) { animation-delay: 0.2s; }
+    .card-custom:nth-child(3) { animation-delay: 0.3s; }
+    .card-custom:nth-child(4) { animation-delay: 0.4s; }
+    
+    /* Badge critique avec animation */
+    .badge-critique {
+        background: linear-gradient(135deg, #dc3545, #a71d2a);
+        animation: pulse 2s infinite;
+        font-weight: 600;
+        padding: 0.5em 0.8em;
+        box-shadow: 0 2px 8px rgba(220, 53, 69, 0.3);
+    }
+    @keyframes pulse {
+        0%, 100% { opacity: 1; transform: scale(1); }
+        50% { opacity: 0.85; transform: scale(1.05); }
+    }
+    
+    /* Ligne de tableau avec alerte */
+    tr.stock-critique {
+        background: linear-gradient(90deg, rgba(220,53,69,0.08), transparent);
+        border-left: 4px solid #dc3545;
+    }
+    
+    /* Boutons d'action */
+    .btn-action {
+        transition: all 0.2s;
+        width: 36px;
+        height: 36px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 8px;
+    }
+    .btn-action:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+    
+    /* Valeur totale animée */
+    .total-value {
+        font-size: 1.8rem;
+        font-weight: 700;
+        background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    
+    <!-- En-tête avec date et bienvenue -->
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-3">
+        <div>
+            <h2 class="mb-1 fw-bold">🏠 Tableau de Bord</h2>
+            <p class="text-muted mb-0">
+                Bienvenue, <strong>{{ user.username }}</strong> ! 
+                <small class="ms-2 text-primary">
+                    {% if user.is_superuser %}👑 Administrateur
+                    {% elif user|is_in_group:"Admin" %}🔧 Admin
+                    {% else %}🛒 Vendeur{% endif %}
+                </small>
+            </p>
+        </div>
+        <div class="d-flex align-items-center gap-2">
+            <span class="badge bg-light text-dark border">
+                📅 {% now "d/m/Y" %}
+            </span>
+            <span class="badge bg-light text-dark border" id="heureReel">
+                🕐 {% now "H:i" %}
+            </span>
+        </div>
+    </div>
+
+    <!-- 📊 Cartes statistiques -->
+    <div class="row g-4 mb-4">
+        <!-- Total Produits -->
+        <div class="col-md-3 col-sm-6">
+            <div class="card card-custom bg-primary text-white p-3 h-100">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="mb-1 opacity-75">📦 Total Produits</h6>
+                        <h2 class="mb-0 fw-bold">{{ total_produits|default:0 }}</h2>
+                    </div>
+                    <i class="bi bi-boxes fs-1 opacity-50"></i>
+                </div>
+                <small class="opacity-75 mt-2 d-block">
+                    {{ produits_critiques_count|default:0 }} en alerte
+                </small>
+            </div>
+        </div>
+        
+        <!-- Valeur du Stock en MRU -->
+        <div class="col-md-3 col-sm-6">
+            <div class="card card-custom bg-success text-white p-3 h-100">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="mb-1 opacity-75">💰 Valeur Stock</h6>
+                        <h2 class="mb-0 fw-bold total-value">{{ total_valeur|floatformat:2 }} MRU</h2>
+                    </div>
+                    <i class="bi bi-currency-dollar fs-1 opacity-50"></i>
+                </div>
+                <small class="opacity-75 mt-2 d-block">
+                    Mise à jour temps réel
+                </small>
+            </div>
+        </div>
+        
+        <!-- Alertes Stock Critique -->
+        <div class="col-md-3 col-sm-6">
+            <div class="card card-custom bg-warning text-dark p-3 h-100">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="mb-1 opacity-75">⚠️ Stocks Critiques</h6>
+                        <h2 class="mb-0 fw-bold">{{ produits_critiques_count|default:0 }}</h2>
+                    </div>
+                    <i class="bi bi-exclamation-triangle fs-1 opacity-50"></i>
+                </div>
+                {% if produits_critiques_count > 0 %}
+                <a href="{% url 'stock:rapport_stock_critique' %}" class="btn btn-sm btn-dark mt-2">
+                    Voir détails →
+                </a>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Derniers Mouvements -->
+        <div class="col-md-3 col-sm-6">
+            <div class="card card-custom bg-info text-white p-3 h-100">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="mb-1 opacity-75">🕐 Derniers Mouvements</h6>
+                        <h2 class="mb-0 fw-bold">{{ derniers_mouvements|length|default:0 }}</h2>
+                    </div>
+                    <i class="bi bi-activity fs-1 opacity-50"></i>
+                </div>
+                <a href="{% url 'stock:historique' %}" class="btn btn-sm btn-light mt-2 text-info fw-bold">
+                    Historique →
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- 🔔 Alertes Stock Critique (si présent) -->
+    {% if produits_critiques_count > 0 %}
+    <div class="alert alert-danger d-flex align-items-center mb-4 shadow-sm" role="alert">
+        <i class="bi bi-exclamation-octagon-fill fs-3 me-3"></i>
+        <div class="flex-grow-1">
+            <strong class="d-block fs-5">⚠️ {{ produits_critiques_count }} produit(s) en stock critique !</strong>
+            <small class="text-dark">
+                Les produits suivants nécessitent un réapprovisionnement urgent :
+                {% for p in produits_critiques|slice:":3" %}
+                    <strong>{{ p.nom }}</strong>{% if not forloop.last %}, {% endif %}
+                {% endfor %}{% if produits_critiques_count > 3 %}...{% endif %}
+            </small>
+        </div>
+        <a href="{% url 'stock:rapport_stock_critique' %}" class="btn btn-danger btn-sm ms-3">
+            Voir le rapport complet
+        </a>
+    </div>
+    {% endif %}
+
+    <!-- 📦 Tableau principal des produits -->
+    <div class="card card-custom p-4 mb-4">
+        <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-3">
+            <h4 class="mb-0 fw-bold">📦 État du Stock en Temps Réel</h4>
+            <div class="d-flex flex-wrap gap-2">
+                <!-- Boutons Admin -->
+                {% if is_admin %}
+                <a href="{% url 'stock:entree' %}" class="btn btn-success btn-action-lg">
+                    <i class="bi bi-arrow-down-circle me-1"></i>Entrée
+                </a>
+                <a href="{% url 'stock:vente' %}" class="btn btn-primary btn-action-lg">
+                    <i class="bi bi-cart-check me-1"></i>Vente
+                </a>
+                <a href="{% url 'stock:liste_produits' %}" class="btn btn-outline-secondary btn-action-lg">
+                    <i class="bi bi-gear me-1"></i>Gérer Produits
+                </a>
+                {% else %}
+                <!-- Boutons Vendeurs -->
+                <a href="{% url 'stock:vente' %}" class="btn btn-primary btn-action-lg">
+                    <i class="bi bi-cart-check me-1"></i>Nouvelle Vente
+                </a>
+                {% endif %}
+                <!-- Bouton Impression -->
+                <button onclick="window.print()" class="btn btn-outline-dark btn-action-lg no-print">
+                    <i class="bi bi-printer me-1"></i>Imprimer
+                </button>
+            </div>
+        </div>
+        
+        <div class="table-responsive">
+            <table class="table table-hover align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th>📦 Produit</th>
+                        <th>💵 P.U (MRU)</th>
+                        <th>🔢 Quantité</th>
+                        <th>💰 Montant (MRU)</th>
+                        <th>📊 Statut</th>
+                        <th class="text-end no-print">⚙️ Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for p in produits %}
+                    <tr class="{% if p.est_critique %}stock-critique{% endif %}">
+                        <td class="fw-bold">{{ p.nom }}</td>
+                        <td class="text-primary fw-bold">{{ p.prix_unitaire|floatformat:2 }} MRU</td>
+                        <td>
+                            <span class="fs-5 {% if p.est_critique %}text-danger fw-bold{% endif %}">
+                                {{ p.stock_actuel }}
+                            </span>
+                            {% if p.est_critique %}
+                            <br><small class="text-danger">⚠️ Critique</small>
+                            {% endif %}
+                        </td>
+                        <td class="fw-bold">
+                            {{ p.montant_total|floatformat:2 }} MRU
+                        </td>
+                        <td>
+                            {% if p.stock_actuel == 0 %}
+                                <span class="badge bg-danger">🔴 Épuisé</span>
+                            {% elif p.est_critique %}
+                                <span class="badge badge-critique">⚠️ Critique</span>
+                            {% elif p.stock_actuel <= p.seuil_critique|add:5 %}
+                                <span class="badge bg-warning text-dark">🟡 Faible</span>
+                            {% else %}
+                                <span class="badge bg-success">🟢 En stock</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-end no-print">
+                            <div class="d-flex justify-content-end gap-1">
+                                <a href="{% url 'stock:vente' %}?produit={{ p.id }}" 
+                                class="btn btn-sm btn-outline-primary btn-action" 
+                                title="Vendre ce produit">
+                                    <i class="bi bi-cart"></i>
+                                </a>
+                                {% if is_admin %}
+                                <a href="{% url 'stock:entree' %}?produit={{ p.id }}" 
+                                class="btn btn-sm btn-outline-success btn-action"
+                                title="Ajouter du stock">
+                                    <i class="bi bi-plus-lg"></i>
+                                </a>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" class="text-center py-5">
+                            <div class="text-muted">
+                                <i class="bi bi-inbox fs-1 d-block mb-3"></i>
+                                <p class="fs-5">📭 Aucun produit enregistré</p>
+                                {% if is_admin %}
+                                <a href="{% url 'stock:ajouter_produit' %}" class="btn btn-primary">
+                                    <i class="bi bi-plus-circle me-1"></i>Ajouter un premier produit
+                                </a>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- 🕐 Derniers mouvements (Traçabilité) -->
+    <div class="card card-custom p-4">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h4 class="mb-0 fw-bold">🕐 Traçabilité - Dernières Opérations</h4>
+            <a href="{% url 'stock:historique' %}" class="btn btn-outline-primary btn-sm">
+                Voir tout l'historique <i class="bi bi-arrow-right ms-1"></i>
+            </a>
+        </div>
+        
+        <div class="table-responsive">
+            <table class="table table-sm">
+                <thead class="table-light">
+                    <tr>
+                        <th>🕐 Date/Heure</th>
+                        <th>📦 Produit</th>
+                        <th>🔄 Type</th>
+                        <th>🔢 Qté</th>
+                        <th>💰 Montant (MRU)</th>
+                        <th>👤 Opérateur</th>
+                        <th class="no-print">🧾</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for m in derniers_mouvements %}
+                    <tr class="{% if m.type_mouvement == 'ENTREE' %}table-success{% else %}table-danger{% endif %}">
+                        <td>
+                            <small class="d-block fw-bold">{{ m.date_operation|date:"d/m/y" }}</small>
+                            <small class="text-muted">{{ m.date_operation|time:"H:i" }}</small>
+                        </td>
+                        <td class="fw-bold">{{ m.produit.nom }}</td>
+                        <td>
+                            {% if m.type_mouvement == 'ENTREE' %}
+                                <span class="badge bg-success">📥 Entrée</span>
+                            {% else %}
+                                <span class="badge bg-danger">📤 Vente</span>
+                            {% endif %}
+                        </td>
+                        <td class="fw-bold">
+                            <span class="{% if m.type_mouvement == 'VENTE' %}text-danger{% else %}text-success{% endif %}">
+                                {% if m.type_mouvement == 'ENTREE' %}+{% else %}-{% endif %}{{ m.quantite }}
+                            </span>
+                        </td>
+                        <td class="fw-bold">{{ m.montant_total|floatformat:2 }} MRU</td>
+                        <td><small>{{ m.opere_par.username|default:"Système" }}</small></td>
+                        <td class="no-print">
+                            {% if m.type_mouvement == 'VENTE' %}
+                            <a href="{% url 'stock:imprimer_vente' m.id %}" 
+                            class="btn btn-sm btn-outline-secondary" 
+                            target="_blank" title="Imprimer reçu">
+                                <i class="bi bi-receipt"></i>
+                            </a>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="7" class="text-center text-muted py-3">
+                            📭 Aucune opération récente
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Mise à jour de l'heure en temps réel
+setInterval(() => {
+    const now = new Date();
+    const timeStr = now.toLocaleTimeString('fr-FR', { 
+        hour: '2-digit', 
+        minute: '2-digit',
+        hour12: false 
+    });
+    document.getElementById('heureReel').innerHTML = `🕐 ${timeStr}`;
+}, 1000);
+
+// Auto-refresh optionnel toutes les 60 secondes (pour temps réel)
+// Décommentez la ligne ci-dessous si souhaité :
+// setTimeout(() => location.reload(), 60000);
+
+// Confirmation avant actions sensibles
+document.querySelectorAll('[data-confirm]').forEach(btn => {
+    btn.addEventListener('click', function(e) {
+        if (!confirm(this.dataset.confirm)) {
+            e.preventDefault();
+        }
+    });
+});
+</script>
+{% endblock %}

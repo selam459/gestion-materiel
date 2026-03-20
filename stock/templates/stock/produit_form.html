@@ -1,0 +1,116 @@
+{% extends 'stock/base.html' %}
+{% load static %}
+{% load user_extras %}
+{% load custom_filters %}
+{% block title %}📦 {% if action == 'ajouter' %}Ajouter{% else %}Modifier{% endif %} un Produit{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        
+        <!-- En-tête -->
+        <div class="card card-custom bg-gradient-primary text-white mb-4">
+            <div class="card-body text-center py-4">
+                <h2 class="mb-2">
+                    {% if action == 'ajouter' %}➕{% else %}✏️{% endif %}
+                    {% if action == 'ajouter' %}Ajouter{% else %}Modifier{% endif %} un Produit
+                </h2>
+                <p class="mb-0 opacity-75">Gestion des produits - Monnaie : MRU</p>
+            </div>
+        </div>
+
+        <!-- Messages -->
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            {% endfor %}
+        {% endif %}
+
+        <!-- Formulaire -->
+        <div class="card card-custom p-4 mb-4">
+            <form method="POST" action="">
+                {% csrf_token %}
+                
+                <!-- Nom du produit -->
+                <div class="mb-3">
+                    <label for="nom" class="form-label fw-bold">📦 Nom du Produit *</label>
+                    <input type="text" name="nom" id="nom" class="form-control form-control-lg" 
+                        value="{{ produit.nom|default:'' }}" placeholder="Ex: Sac de Riz 50kg" required>
+                </div>
+
+                <!-- Description -->
+                <div class="mb-3">
+                    <label for="description" class="form-label">📝 Description</label>
+                    <textarea name="description" id="description" class="form-control" rows="3" 
+                            placeholder="Description optionnelle du produit...">{{ produit.description|default:'' }}</textarea>
+                </div>
+
+                <!-- Prix Unitaire et Seuil sur même ligne -->
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="prix_unitaire" class="form-label fw-bold">💵 Prix Unitaire (MRU) *</label>
+                            <div class="input-group input-group-lg">
+                                <span class="input-group-text">MRU</span>
+                                <input type="number" name="prix_unitaire" id="prix_unitaire" 
+                                    class="form-control" step="0.01" min="0" 
+                                    value="{{ produit.prix_unitaire|default:'0.00' }}" required>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="seuil_critique" class="form-label fw-bold">⚠️ Seuil Critique *</label>
+                            <input type="number" name="seuil_critique" id="seuil_critique" 
+                                class="form-control form-control-lg" min="1" 
+                                value="{{ produit.seuil_critique|default:5 }}" required>
+                            <small class="text-muted">Alerte quand stock ≤ cette valeur</small>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Stock Initial (seulement pour ajout) -->
+                {% if action == 'ajouter' %}
+                <div class="mb-3">
+                    <label for="stock_initial" class="form-label fw-bold">🔢 Stock Initial</label>
+                    <input type="number" name="stock_initial" id="stock_initial" 
+                        class="form-control form-control-lg" min="0" value="0">
+                </div>
+                {% endif %}
+
+                <!-- Résumé (seulement pour modification) -->
+                {% if action == 'modifier' and produit %}
+                <div class="alert alert-info mb-3">
+                    <strong>📊 Stock actuel :</strong> {{ produit.stock_actuel }} unités<br>
+                    <strong>💰 Valeur actuelle :</strong> {{ produit.valeur_actuelle|floatformat:2 }} MRU
+                </div>
+                {% endif %}
+
+                <!-- Boutons -->
+                <div class="d-grid gap-2 d-md-flex justify-content-md-center mt-4">
+                    <button type="submit" class="btn btn-success btn-lg px-5">
+                        ✅ {% if action == 'ajouter' %}Ajouter{% else %}Mettre à jour{% endif %}
+                    </button>
+                    <a href="{% url 'stock:liste_produits' %}" class="btn btn-secondary btn-lg px-4">
+                        ❌ Annuler
+                    </a>
+                </div>
+            </form>
+        </div>
+
+        <!-- Aide -->
+        <div class="card card-custom p-3 bg-light">
+            <h6 class="fw-bold mb-2">💡 Conseils :</h6>
+            <ul class="mb-0 small text-muted">
+                <li>Le <strong>Prix Unitaire</strong> est utilisé pour calculer automatiquement les montants des ventes/entrées.</li>
+                <li>Le <strong>Seuil Critique</strong> déclenche une alerte visuelle quand le stock est faible.</li>
+                <li>Pour modifier le stock, utilisez les pages <strong>Entrées</strong> ou <strong>Ventes</strong>.</li>
+            </ul>
+        </div>
+
+    </div>
+</div>
+{% endblock %}

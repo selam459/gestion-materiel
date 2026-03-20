@@ -1,0 +1,82 @@
+{% extends 'stock/base.html' %}
+{% load static %}
+
+{% block title %}📥 Ajouter une Entrée de Stock{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-6">
+
+        <!-- En-tête -->
+        <div class="card card-custom bg-gradient-success text-white mb-4">
+            <div class="card-body text-center py-4">
+                <h2 class="mb-2">📥 Ajouter une Entrée</h2>
+                <p class="mb-0 opacity-75">Enregistrer un approvisionnement</p>
+            </div>
+        </div>
+
+        <!-- Messages -->
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            {% endfor %}
+        {% endif %}
+
+        <!-- Formulaire d'entrée -->
+        <div class="card card-custom p-4">
+            <form method="POST" action="{% url 'stock:entree' %}">
+                {% csrf_token %}
+
+                <!-- Sélection du produit -->
+                <div class="mb-3">
+                    <label for="produit" class="form-label fw-bold">📦 Produit *</label>
+                    <select name="produit" id="produit" class="form-select form-select-lg" required>
+                        <option value="" selected disabled>-- Choisissez un produit --</option>
+                        {% for p in produits %}
+                            <option value="{{ p.id }}" {% if produit_selectionne and produit_selectionne.id == p.id %}selected{% endif %}>
+                                {{ p.nom }} (Stock actuel : {{ p.stock_actuel }})
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <!-- Quantité -->
+                <div class="mb-3">
+                    <label for="quantite" class="form-label fw-bold">🔢 Quantité *</label>
+                    <input type="number" name="quantite" id="quantite" class="form-control form-control-lg" min="1" value="1" required>
+                </div>
+
+                <!-- Commentaire (optionnel) -->
+                <div class="mb-3">
+                    <label for="commentaire" class="form-label">📝 Commentaire</label>
+                    <textarea name="commentaire" id="commentaire" class="form-control" rows="2" placeholder="Ex: Livraison fournisseur..."></textarea>
+                </div>
+
+                <!-- Boutons -->
+                <div class="d-grid gap-2 d-md-flex justify-content-md-center mt-4">
+                    <button type="submit" class="btn btn-success btn-lg px-5">
+                        ✅ Valider l'entrée
+                    </button>
+                    <a href="{% url 'stock:dashboard' %}" class="btn btn-secondary btn-lg px-4">
+                        ❌ Annuler
+                    </a>
+                </div>
+            </form>
+        </div>
+
+        <!-- Rappel -->
+        <div class="card card-custom p-3 mt-4 bg-light">
+            <h6 class="fw-bold mb-2">💡 Information :</h6>
+            <ul class="mb-0 small text-muted">
+                <li>Une entrée augmente le stock du produit sélectionné.</li>
+                <li>Le montant total est calculé automatiquement (quantité × prix unitaire).</li>
+                <li>Un mouvement est créé et tracé dans l'historique.</li>
+            </ul>
+        </div>
+
+    </div>
+</div>
+{% endblock %}
