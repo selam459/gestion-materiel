@@ -75,12 +75,23 @@ WSGI_APPLICATION = 'gestion_materiel.wsgi.application'
 # 🗄️ BASE DE DONNÉES
 # ===========================
 # Configuration pour Render (PostgreSQL) avec fallback SQLite en local
+import os
+import dj_database_url
+
+DATABASE_URL = os.environ.get('DATABASE_URL')
+
+import os  # ← En haut du fichier
+import dj_database_url
+
 DATABASES = {
     'default': dj_database_url.config(
-        default='sqlite:///db.sqlite3',
-        conn_max_age=600
+        default=os.environ.get('DATABASE_URL'),  # ← Lecture de la variable Render
+        conn_max_age=600,
+        conn_health_checks=True,
     )
 }
+
+ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', '').split(',')
 
 # ===========================
 # 🔐 VALIDATION DES MOTS DE PASSE
